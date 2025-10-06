@@ -30,12 +30,25 @@ Dapat berjalan **offline**, membaca data berat dari **port COM**, dan menyimpan 
 
 ```
 timbangan-app/
-├─ package.json
-├─ main.js           # proses utama Electron (window + serial + db)
-├─ index.html        # UI sederhana
-├─ renderer.js       # logika UI, komunikasi IPC
-├─ data.db           # file SQLite otomatis dibuat
-├─ rebuild.bat       # script rebuild modul native
+├─ main.js                 # proses utama Electron (CommonJS)
+├─ preload.js              # jembatan IPC (main ↔ React)
+├─ data.db                 # tetap, untuk better-sqlite3
+├─ vite.config.js          # konfigurasi build React
+├─ package.json            # sudah diperbarui
+│
+├─ renderer/               # 🔹 area frontend React
+│  ├─ index.html           # entry HTML Vite
+│  ├─ main.jsx             # root React
+│  ├─ App.jsx              # layout utama
+│  ├─ components/          # komponen kecil
+│  │   ├─ HeaderBar.jsx
+│  │   └─ WeightTable.jsx
+│  ├─ pages/
+│  │   └─ Dashboard.jsx
+│  └─ utils/
+│      └─ formatDate.js
+│
+├─ dist/                   # hasil build React (otomatis)
 └─ node_modules/
 ```
 
