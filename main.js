@@ -1,21 +1,28 @@
 // ===================================================
 // Main Process - Electron Entry Point
 // ===================================================
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { SerialPort } = require('serialport');
 const path = require('path');
 
 // Turn off GPU cache di Windows (mencegah caching UI berat)
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 
+// ===================================================
+// Fungsi utama untuk membuat jendela
+// ===================================================
 function createWindow() {
     const isDev = process.env.NODE_ENV === 'development';
+
+    console.log('🔍 [MAIN] Preload path:', path.join(__dirname, 'preload.js'));
 
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'), // optional
+            preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
+            nodeIntegration: false,
         },
     });
 
@@ -50,6 +57,25 @@ function createWindow() {
         win.loadFile(distPath);
     }
 }
+
+// ===================================================
+// IPC Handler untuk mendeteksi port COM yang terhubung
+// ===================================================
+ipcMain.handle('list-serial-ports', async () => {
+    try {
+        const ports = await SerialPort.list();
+        return ports.map((p) => ({
+            path: p.path,
+            manufacturer: p.manufacturer,
+            serialNumber: p.serialNumber,
+            vendorId: p.vendorId,
+            productId: p.productId,
+        }));
+    } catch (err) {
+        console.error('❌ Gagal membaca COM port:', err);
+        return [];
+    }
+});
 
 // ===================================================
 // App Lifecycle

@@ -9,7 +9,9 @@ export default function App() {
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
             <HeaderBar />
-            <BodyContent />
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <BodyContent />
+            </div>
             <FooterBar />
         </div>
     )

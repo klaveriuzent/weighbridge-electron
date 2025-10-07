@@ -1,89 +1,86 @@
 import React, { useState } from 'react'
-import { Tabs, Radio, Button } from 'antd'
+import { Tabs, Button, Table } from 'antd'
+import ReceivedTab from '../pages/tabs/ReceivedTab'
+import DeliveryTab from '../pages/tabs/DeliveryTab'
+import ExternalTab from '../pages/tabs/ExternalTab'
 
 export default function BodyContent() {
-    const [size, setSize] = useState('middle')
     const [activeKey, setActiveKey] = useState('1')
-    const [items, setItems] = useState([
-        {
-            label: 'Tab 1',
-            key: '1',
-            children: 'Content of editable tab 1',
-        },
-        {
-            label: 'Tab 2',
-            key: '2',
-            children: 'Content of editable tab 2',
-        },
-    ])
+    const [ports, setPorts] = useState([])
 
-    // Tambah tab baru
-    const add = () => {
-        const newKey = String(items.length + 1)
-        const newTab = {
-            label: `Tab ${newKey}`,
-            key: newKey,
-            children: `Content of editable tab ${newKey}`,
+    const items = [
+        { label: 'Received', key: '1', children: <ReceivedTab /> },
+        { label: 'Delivery', key: '2', children: <DeliveryTab /> },
+        { label: 'External', key: '3', children: <ExternalTab /> },
+    ]
+
+    const fetchPorts = async () => {
+        try {
+            const result = await window.electronAPI.listSerialPorts()
+            setPorts(result)
+        } catch (err) {
+            console.error('Gagal ambil COM port:', err)
         }
-        setItems([...items, newTab])
-        setActiveKey(newKey)
-    }
-
-    // Hapus tab
-    const remove = (targetKey) => {
-        const targetIndex = items.findIndex((item) => item.key === targetKey)
-        const newItems = items.filter((item) => item.key !== targetKey)
-        if (newItems.length && targetKey === activeKey) {
-            const newActiveKey =
-                newItems[targetIndex === newItems.length ? targetIndex - 1 : targetIndex].key
-            setActiveKey(newActiveKey)
-        }
-        setItems(newItems)
-    }
-
-    // Event handler dari Tabs editable-card
-    const onEdit = (targetKey, action) => {
-        if (action === 'add') add()
-        else remove(targetKey)
     }
 
     return (
-        <main className="flex-1 px-6 py-4 bg-gray-50">
-            <div className="bg-white rounded-2xl shadow p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold text-gray-700 m-0">
-                        Dashboard Tabs
-                    </h2>
-                    <Radio.Group
-                        value={size}
-                        onChange={(e) => setSize(e.target.value)}
-                        className="space-x-2"
-                    >
-                        <Radio.Button value="small">Small</Radio.Button>
-                        <Radio.Button value="middle">Middle</Radio.Button>
-                        <Radio.Button value="large">Large</Radio.Button>
-                    </Radio.Group>
-                </div>
+        <main className="flex-1 flex flex-col bg-gray-50 px-6 py-4 overflow-hidden min-h-0">
+            {/*Dashboard Container */}
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                *Timbangan Info*
+            </h2>
 
+            {/* Tabs Container */}
+            {/* <div
+                className="flex-1 flex flex-col min-h-0 overflow-hidden
+                    [&_.ant-tabs]:flex-1
+                    [&_.ant-tabs-nav]:mb-0
+                    [&_.ant-tabs-nav]:border-b-0
+                    [&_.ant-tabs-nav::before]:hidden
+                    [&_.ant-tabs-content-holder]:flex-1
+                    [&_.ant-tabs-content-holder]:overflow-auto
+                    [&_.ant-tabs-content]:flex-1
+                    [&_.ant-tabs-tabpane]:flex-1
+                    [&_.ant-tabs-tabpane]:overflow-auto"
+            >
                 <Tabs
-                    type="editable-card"
-                    size={size}
-                    hideAdd
-                    onEdit={onEdit}
+                    type="card"
+                    size="middle"
                     activeKey={activeKey}
                     onChange={setActiveKey}
-                    items={items}
+                    className="flex-1 flex flex-col bg-transparent"
+                    items={items.map((tab) => ({
+                        ...tab,
+                        children: (
+                            <section className="flex-1 flex flex-col bg-white rounded-b-2xl shadow p-6 min-h-0 -mt-4">
+                                {tab.children}
+                            </section>
+                        ),
+                    }))}
                 />
+            </div> */}
 
-                <div className="mt-4 flex justify-end">
-                    <Button
-                        type="primary"
-                        onClick={add}
-                        className="!bg-[#303c54] hover:!bg-[#3e4a68]"
-                    >
-                        + Tambah Tab
+            {/* Content TESTING Container */}
+            <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-gray-700">Deteksi Port COM</h3>
+                    <Button type="primary" onClick={fetchPorts}>
+                        Refresh Port
                     </Button>
                 </div>
+
+                <Table
+                    dataSource={ports.map((p, i) => ({ key: i, ...p }))}
+                    columns={[
+                        { title: 'Path', dataIndex: 'path' },
+                        { title: 'Manufacturer', dataIndex: 'manufacturer' },
+                        { title: 'Vendor ID', dataIndex: 'vendorId' },
+                        { title: 'Product ID', dataIndex: 'productId' },
+                    ]}
+                    pagination={false}
+                    className="bg-white rounded-lg shadow"
+                    size="small"
+                />
             </div>
         </main>
     )
