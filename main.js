@@ -1,15 +1,15 @@
+// ===================================================
+// Main Process - Electron Entry Point
+// ===================================================
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
-// Turn Off GPU cache di Windows
+// Turn off GPU cache di Windows (mencegah caching UI berat)
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 
-// Auto reload -> development (opsional)
-try {
-    require('electron-reloader')(module);
-} catch (_) { }
-
 function createWindow() {
+    const isDev = process.env.NODE_ENV === 'development';
+
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -19,19 +19,41 @@ function createWindow() {
         },
     });
 
-    const isDev = process.env.NODE_ENV === 'development';
-
     if (isDev) {
+        // ===================================================
+        // Development Mode (React + Vite)
+        // ===================================================
         console.log('🔹 DEV MODE → load http://localhost:5173');
         win.loadURL('http://localhost:5173');
+
+        // Bersihkan cache supaya UI selalu update
+        win.webContents.session.clearCache();
+        win.webContents.reloadIgnoringCache();
+
+        // Buka DevTools otomatis
         win.webContents.openDevTools();
+
+        // Tambahkan shortcut manual reload (Ctrl+R / F5)
+        win.webContents.on('before-input-event', (event, input) => {
+            if ((input.key === 'r' && input.control) || input.key === 'F5') {
+                console.log('🔁 Manual reload triggered');
+                win.webContents.reloadIgnoringCache();
+                event.preventDefault();
+            }
+        });
     } else {
+        // ===================================================
+        // Production Mode (Build dari dist)
+        // ===================================================
         const distPath = path.join(__dirname, 'dist', 'index.html');
         console.log('🔹 PROD MODE → load', distPath);
         win.loadFile(distPath);
     }
 }
 
+// ===================================================
+// App Lifecycle
+// ===================================================
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

@@ -1,0 +1,79 @@
+/* ============================================================
+   THEME COLOR VARIABLES (Base: Navy Blue #303c54)
+   ============================================================ */
+
+/* 🌞 Mode terang (default) */
+:root {
+  --color-primary: #303c54;
+  --color-primary-hover: #3c4b6b;
+  --color-primary-active: #243047;
+
+  --color-bg: #f7f9fc;
+  --color-surface: #ffffff;
+
+  --color-text: #1f1f1f;
+  --color-text-secondary: #5a5a5a;
+
+  --color-border: #d9d9d9;
+  --color-divider: #e5e7eb;
+
+  --color-success: #4caf50;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}
+
+/* 🌙 Mode gelap */
+[data-theme="dark"] {
+  --color-primary: #3f4a63;
+  --color-primary-hover: #5a6785;
+  --color-primary-active: #2a3348;
+
+  --color-bg: #1e1e2e;
+  --color-surface: #2a2a3b;
+
+  --color-text: #e5e7eb;
+  --color-text-secondary: #a1a1aa;
+
+  --color-border: #3a3a4d;
+  --color-divider: #2d2d3f;
+
+  --color-success: #57c84d;
+  --color-warning: #f7b32b;
+  --color-error: #ff6666;
+}
+
+/* ============================================================
+   GLOBAL STYLES
+   ============================================================ */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Surfaces & containers */
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-primary-hover:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.border-default {
+  border-color: var(--color-border);
+}

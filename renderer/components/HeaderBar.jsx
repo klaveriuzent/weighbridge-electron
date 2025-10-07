@@ -1,14 +1,9 @@
-import React from 'react';
-import { Button } from 'antd';
-import { SettingOutlined } from '@ant-design/icons';
+import React from 'react'
 
 export default function HeaderBar() {
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'white' }}>
-            <h3 style={{ color: 'white', margin: 0 }}>Weighbridge App</h3>
-            <Button type="text" icon={<SettingOutlined />} style={{ color: 'white' }}>
-                Pengaturan
-            </Button>
+        <div className="flex items-center justify-between px-6 py-3 bg-primary text-white shadow-md">
+            <h3 className="text-lg font-semibold m-0">Weighbridge App</h3>
         </div>
-    );
+    )
 }
