@@ -3,20 +3,41 @@
   "version": "1.0.0",
   "description": "Weighbridge App with Electron + React + Ant Design",
   "main": "main.js",
+  "author": "Jefry Chiedi",
+  "license": "MIT",
   "type": "commonjs",
   "scripts": {
-    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "build": "vite build",
-    "start": "npm run build && electron ."
+    "dev": "set NODE_ENV=development && concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build --emptyOutDir",
+    "start": "set NODE_ENV=production && npm run build && electron .",
+    "dist": "npm run build && electron-builder build --win nsis",
+    "portable": "npm run build && electron-builder build --win portable"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "build": {
+    "appId": "com.weighbridge.app",
+    "productName": "Weighbridge",
+    "directories": {
+      "buildResources": "assets",
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "dist/**/*",
+      "data.db"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": ""
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}.exe"
+    }
+  },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "antd": "^5.27.4",
     "better-sqlite3": "^12.4.1",
-    "electron": "^38.2.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "serialport": "^13.0.0"
@@ -24,6 +45,8 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^9.2.1",
+    "electron": "^38.2.1",
+    "electron-builder": "^24.6.4",
     "electron-reloader": "^1.2.3",
     "vite": "^5.4.8",
     "wait-on": "^7.2.0"

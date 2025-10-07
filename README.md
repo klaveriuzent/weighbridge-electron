@@ -1,46 +1,50 @@
 # ⚖️ Weighbridge Desktop App
 
-Aplikasi **timbangan mobil berbasis desktop** menggunakan **Electron**, **SQLite**, dan **SerialPort**.  
-Dapat berjalan **offline**, membaca data berat dari **port COM**, dan menyimpan hasilnya ke database lokal.
+Aplikasi **timbangan mobil berbasis desktop** menggunakan **Electron**, **React + Ant Design (UI)**, **SQLite**, dan **SerialPort**.  
+Dapat berjalan **offline**, membaca data berat dari **port COM (RS232)**, dan menyimpan hasilnya ke **database lokal**.
 
 ---
 
 ## 🚀 Fitur Utama
 
-- Baca data dari **timbangan via port COM** (RS232)
-- Simpan otomatis ke **SQLite (offline database)**
-- Tampilkan hasil timbangan di UI
-- Dapat dijalankan di **Windows (x64)**
-- Tidak butuh instalasi server database
+- 🔌 Baca data otomatis dari **alat timbangan via port COM**
+- 💾 Simpan hasil ke **SQLite (better-sqlite3)** — tanpa server eksternal
+- 🧠 UI modern berbasis **React + Ant Design**
+- 📊 Menampilkan data timbangan dan histori di tampilan desktop
+- 🖥️ Build ke **Windows (x64)** — bisa **installer** atau **portable (tanpa install)**
+- 📴 Dapat digunakan **offline penuh**
 
 ---
 
 ## 🧩 Teknologi yang Digunakan
 
-| Komponen        | Versi Disarankan |
-|-----------------|------------------|
-| **Node.js**     | v20.15.0 (LTS)   |
-| **Electron**    | v38.2.1          |
-| **SerialPort**  | v12.0.0          |
-| **better-sqlite3** | v9.4.0        |
+| Komponen             | Versi Disarankan |
+|----------------------|------------------|
+| **Node.js**          | v20.15.0 (LTS)   |
+| **Electron**         | v38.2.1          |
+| **React**            | v19.x            |
+| **Ant Design (antd)**| v5.27.x          |
+| **better-sqlite3**   | v12.4.x          |
+| **SerialPort**       | v13.0.x          |
+| **Vite**             | v5.4.x           |
 
 ---
 
 ## 📁 Struktur Folder
 
 ```
-timbangan-app/
-├─ main.js                 # proses utama Electron (CommonJS)
-├─ preload.js              # jembatan IPC (main ↔ React)
-├─ data.db                 # tetap, untuk better-sqlite3
-├─ vite.config.js          # konfigurasi build React
-├─ package.json            # sudah diperbarui
+weighbridge-electron/
+├─ main.js                 # Proses utama Electron
+├─ preload.js              # (opsional) Jembatan IPC ke renderer
+├─ data.db                 # Database lokal SQLite
+├─ vite.config.js          # Konfigurasi build React (Vite)
+├─ package.json            # Script dan konfigurasi build
 │
-├─ renderer/               # 🔹 area frontend React
-│  ├─ index.html           # entry HTML Vite
-│  ├─ main.jsx             # root React
-│  ├─ App.jsx              # layout utama
-│  ├─ components/          # komponen kecil
+├─ renderer/               # Frontend (React + Ant Design)
+│  ├─ index.html           # Entry HTML untuk Vite
+│  ├─ main.jsx             # Entry point React
+│  ├─ App.jsx              # Layout utama UI
+│  ├─ components/          # Komponen kecil (UI reusable)
 │  │   ├─ HeaderBar.jsx
 │  │   └─ WeightTable.jsx
 │  ├─ pages/
@@ -48,18 +52,19 @@ timbangan-app/
 │  └─ utils/
 │      └─ formatDate.js
 │
-├─ dist/                   # hasil build React (otomatis)
+├─ dist/                   # Hasil build React (otomatis)
+├─ release/                # Hasil build .exe (Electron Builder)
 └─ node_modules/
 ```
 
 ---
 
-## ⚙️ Langkah Instalasi
+## ⚙️ Instalasi & Menjalankan Aplikasi
 
-1. **Clone / buat project**
+1. **Clone repository**
    ```bash
-   git clone <repo_url> timbangan-app
-   cd timbangan-app
+   git clone <repo_url> weighbridge-electron
+   cd weighbridge-electron
    ```
 
 2. **Gunakan Node.js versi 20**
@@ -68,43 +73,74 @@ timbangan-app/
    nvm use 20.15.0
    ```
 
-3. **Install dependensi**
+3. **Install dependencies**
    ```bash
    npm install
    ```
 
-4. **Rebuild modul native agar cocok dengan Electron**
+4. **Jalankan dalam mode pengembangan**
    ```bash
-   npm rebuild better-sqlite3 serialport --runtime=electron --target=38.2.1 --disturl=https://electronjs.org/headers
+   npm run dev
    ```
+   ➜ Membuka Electron window dengan live reload dari Vite (`localhost:5173`)
 
-5. **Jalankan aplikasi**
+5. **Jalankan dalam mode produksi (offline)**
    ```bash
    npm start
    ```
+   ➜ Menjalankan hasil build React dari folder `dist/`
 
 ---
 
-## 🔧 Konfigurasi Port COM
+## 🧱 Build Menjadi File `.exe`
 
-Ubah port sesuai timbangan kamu di file `main.js`:
-
-```js
-const port = new SerialPort({ path: 'COM3', baudRate: 9600 });
+### 🔹 Portable (langsung jalan tanpa install)
+```bash
+npm run portable
+```
+Hasil:
+```
+release/Weighbridge-1.0.0.exe
 ```
 
-Kalau tidak yakin, cek port yang aktif di **Device Manager → Ports (COM & LPT)**.
+### 🔹 Installer versi setup wizard
+```bash
+npm run dist
+```
+Hasil:
+```
+release/Weighbridge Setup 1.0.0.exe
+```
+
+> 💡 Jika build pertama kali gagal karena `symbolic link` error,  
+> jalankan terminal **Run as Administrator** atau aktifkan **Developer Mode** di Windows.
 
 ---
 
-## 💾 Struktur Database
+## 🔌 Konfigurasi Port COM
 
-File `data.db` otomatis dibuat saat aplikasi dijalankan.
+Edit file `main.js`:
+
+```js
+const port = new SerialPort({
+  path: 'COM3',      // sesuaikan dengan port timbangan kamu
+  baudRate: 9600
+});
+```
+
+Untuk mengecek port aktif:
+> Device Manager → Ports (COM & LPT)
+
+---
+
+## 💾 Struktur Database (SQLite)
+
+File `data.db` otomatis dibuat di root folder aplikasi.
 
 Tabel:
 ```sql
 CREATE TABLE IF NOT EXISTS weights (
-  id INTEGER PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   value TEXT,
   time TEXT
 );
@@ -112,9 +148,22 @@ CREATE TABLE IF NOT EXISTS weights (
 
 ---
 
-## 🧱 Rebuild Cepat (Windows)
+## 🧠 Tips & Catatan Penting
 
-Gunakan file `rebuild.bat` agar tidak perlu mengetik perintah panjang setiap kali upgrade Electron:
+- Jalankan **CMD/PowerShell as Administrator** jika akses ke port COM diblok.
+- File `data.db` aman dihapus → akan dibuat ulang otomatis.
+- Jika error `MODULE_NOT_FOUND` atau `NODE_MODULE_VERSION mismatch`, jalankan:
+  ```bash
+  npm rebuild better-sqlite3 serialport --runtime=electron --target=38.2.1 --disturl=https://electronjs.org/headers
+  ```
+- Build pertama kali butuh koneksi internet (download Electron & native binaries).
+- Setelah itu build bisa dilakukan **offline sepenuhnya** (pakai cache lokal).
+
+---
+
+## 🧰 Skrip Rebuild Cepat (Windows)
+
+File `rebuild.bat`:
 
 ```bat
 @echo off
@@ -126,19 +175,26 @@ echo Done!
 pause
 ```
 
-Jalankan dengan **double-click** setiap kali ganti versi Electron.
-
 ---
 
-## 🧠 Catatan Penting
+## 🧾 Troubleshooting Umum
 
-- Jalankan aplikasi dalam mode **Administrator** jika akses port COM dibatasi.
-- Jangan ganti file `data.db` saat aplikasi sedang terbuka.
-- Jika muncul error `MODULE_NOT_FOUND` atau `NODE_MODULE_VERSION mismatch`, jalankan `rebuild.bat`.
+| Error / Masalah | Solusi |
+|-----------------|---------|
+| `Cannot create symbolic link` | Jalankan CMD as Administrator atau aktifkan Developer Mode |
+| `MODULE_NOT_FOUND` | Jalankan `npm rebuild` atau `rebuild.bat` |
+| Aplikasi tidak terbuka saat `npm start` | Pastikan `dist/index.html` sudah ada (jalankan `npm run build`) |
+| Port COM tidak terbaca | Pastikan device RS232 muncul di Device Manager |
 
 ---
 
 ## 📄 Lisensi
 
-Proyek ini bersifat internal.  
-© 2025 Jefry Chiedi – All Rights Reserved.
+Proyek ini bersifat **internal dan non-komersial**.  
+© 2025 **Jefry Chiedi** — All Rights Reserved.
+
+---
+
+> **Catatan:**  
+> Build portable `.exe` dapat dijalankan langsung di Windows tanpa instalasi,  
+> cocok untuk distribusi internal (mis. operator timbang di lapangan).
