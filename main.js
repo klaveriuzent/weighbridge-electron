@@ -4,9 +4,11 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { SerialPort } = require('serialport');
 const path = require('path');
+const http = require('http');
+const https = require('https');
 
-let mainWindow = null;  // 🔹 simpan window utama
-let currentPort = null; // 🔹 simpan port aktif agar bisa ditutup ulang
+let mainWindow = null;
+let currentPort = null;
 
 // Turn off GPU cache di Windows
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
@@ -73,7 +75,6 @@ ipcMain.handle('list-serial-ports', async () => {
 // ===================================================
 ipcMain.handle('open-serial-port', async (_event, path) => {
     try {
-        // Tutup port sebelumnya jika masih terbuka
         if (currentPort && currentPort.isOpen) {
             console.log('⚙️ Menutup port sebelumnya...');
             currentPort.close();
@@ -86,13 +87,10 @@ ipcMain.handle('open-serial-port', async (_event, path) => {
             autoOpen: true,
         });
 
-        // Saat data diterima dari COM port
         currentPort.on('data', (data) => {
             const text = data.toString().trim();
             console.log('📥 Data diterima:', text);
-            if (mainWindow) {
-                mainWindow.webContents.send('serial-data', text); // ✅ kirim ke renderer dengan aman
-            }
+            if (mainWindow) mainWindow.webContents.send('serial-data', text);
         });
 
         currentPort.on('close', () => {
@@ -128,6 +126,45 @@ ipcMain.handle('close-serial-port', async () => {
         return { status: 'error', message: err.message };
     }
 });
+
+// ===================================================
+// IPC Handler: Ambil Gambar CCTV Hikvision (Digest Auth Support)
+// ===================================================
+const DigestFetch = require('digest-fetch').default
+
+ipcMain.handle('fetch-cctv-image', async (_event, { link, username, password }) => {
+    try {
+        if (!link || !username || !password) {
+            return { status: 'error', message: 'Parameter tidak lengkap' }
+        }
+
+        console.log('📸 Fetch CCTV (Digest Auth) from:', link)
+
+        // Gunakan client digest-fetch
+        const client = new DigestFetch(username, password, { algorithm: 'MD5' })
+
+        const res = await client.fetch(link, {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache',
+                Pragma: 'no-cache',
+                Accept: 'image/jpeg',
+            },
+        })
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`)
+        }
+
+        const buffer = await res.arrayBuffer()
+        const base64Image = `data:image/jpeg;base64,${Buffer.from(buffer).toString('base64')}`
+
+        return { status: 'success', image: base64Image }
+    } catch (err) {
+        console.error('❌ Gagal ambil gambar CCTV:', err)
+        return { status: 'error', message: err.message }
+    }
+})
 
 // ===================================================
 // App Lifecycle

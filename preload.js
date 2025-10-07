@@ -16,4 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onSerialData: (callback) => ipcRenderer.on('serial-data', (_, data) => callback(data)),
     onSerialError: (callback) => ipcRenderer.on('serial-error', (_, error) => callback(error)),
     onSerialStatus: (callback) => ipcRenderer.on('serial-status', (_, status) => callback(status)),
+
+    // === FETCH ===
+    fetchCctvImage: (data) => ipcRenderer.invoke('fetch-cctv-image', data),
 })

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Tabs, Button, Table, message } from 'antd'
+import { Tabs, Button, Table, Input, Form, message } from 'antd'
 import ReceivedTab from '../pages/tabs/ReceivedTab'
 import DeliveryTab from '../pages/tabs/DeliveryTab'
 import ExternalTab from '../pages/tabs/ExternalTab'
@@ -9,6 +9,9 @@ export default function BodyContent() {
     const [ports, setPorts] = useState([])
     const [selectedPort, setSelectedPort] = useState(null)
     const [serialData, setSerialData] = useState('')
+    const [cctvImage, setCctvImage] = useState(null)
+    const [loadingCctv, setLoadingCctv] = useState(false)
+    const [form] = Form.useForm()
 
     // =====================================================
     // Tabs definition
@@ -86,6 +89,27 @@ export default function BodyContent() {
             } catch {}
         }
     }, [])
+
+    // =====================================================
+    // Fetch CCTV image
+    // =====================================================
+    const handleFetchCctv = async (values) => {
+        setLoadingCctv(true)
+        setCctvImage(null)
+        console.log('Fetching CCTV image with values:', values)
+        try {
+            const res = await window.electronAPI.fetchCctvImage(values)
+            if (res.status === 'success') {
+                setCctvImage(res.image)
+            } else {
+                message.error(res.message || 'Gagal mengambil gambar CCTV')
+            }
+        } catch (err) {
+            message.error('Gagal mengakses kamera CCTV')
+        } finally {
+            setLoadingCctv(false)
+        }
+    }
 
     // =====================================================
     // UI Render
@@ -186,6 +210,69 @@ export default function BodyContent() {
                         </pre>
                     </div>
                 )}
+
+                {/* Content TESTING Container 2*/}
+
+                {/* =====================================================
+                    CCTV SNAPSHOT SECTION (Tambahan Baru)
+                ===================================================== */}
+                <div className="bg-white rounded-lg shadow p-4 mt-2">
+                    <h4 className="font-semibold text-gray-700 mb-3">
+                        Snapshot CCTV Hikvision
+                    </h4>
+
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={handleFetchCctv}
+                        autoComplete="off"
+                    >
+                        <Form.Item
+                            label="Link"
+                            name="link"
+                            rules={[{ required: true, message: 'Link wajib diisi' }]}
+                        >
+                            <Input placeholder="http://192.168.1.10/ISAPI/Streaming/channels/102/picture" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Username"
+                            name="username"
+                            rules={[{ required: true, message: 'Username wajib diisi' }]}
+                        >
+                            <Input placeholder="admin" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Password"
+                            name="password"
+                            rules={[{ required: true, message: 'Password wajib diisi' }]}
+                        >
+                            <Input.Password placeholder="••••••••" />
+                        </Form.Item>
+
+                        <Form.Item className="mb-0">
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={loadingCctv}
+                                className="w-full"
+                            >
+                                Ambil Gambar CCTV
+                            </Button>
+                        </Form.Item>
+                    </Form>
+
+                    {cctvImage && (
+                        <div className="mt-4 flex justify-center">
+                            <img
+                                src={cctvImage}
+                                alt="CCTV Snapshot"
+                                className="rounded-lg shadow-md max-h-80 object-contain"
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
         </main>
     )
