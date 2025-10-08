@@ -19,4 +19,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // === FETCH ===
     fetchCctvImage: (data) => ipcRenderer.invoke('fetch-cctv-image', data),
+
+    // === ADDITIONAL ===
+    runPlateDetection: async (imagePath) => {
+        try {
+            const result = await ipcRenderer.invoke('run-plate-detection', imagePath);
+            return result;
+        } catch (err) {
+            console.error('Gagal menjalankan deteksi plat:', err);
+            return { error: err.message };
+        }
+    },
 })

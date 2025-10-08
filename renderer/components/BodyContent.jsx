@@ -12,6 +12,8 @@ export default function BodyContent() {
     const [cctvImage, setCctvImage] = useState(null)
     const [loadingCctv, setLoadingCctv] = useState(false)
     const [form] = Form.useForm()
+    const [onnxResult, setOnnxResult] = useState(null)
+    const [loadingOnnx, setLoadingOnnx] = useState(false)
 
     // =====================================================
     // Tabs definition
@@ -96,11 +98,13 @@ export default function BodyContent() {
     const handleFetchCctv = async (values) => {
         setLoadingCctv(true)
         setCctvImage(null)
+        setOnnxResult(null)
         console.log('Fetching CCTV image with values:', values)
         try {
             const res = await window.electronAPI.fetchCctvImage(values)
             if (res.status === 'success') {
                 setCctvImage(res.image)
+                message.success('Snapshot CCTV berhasil diambil!')
             } else {
                 message.error(res.message || 'Gagal mengambil gambar CCTV')
             }
@@ -108,6 +112,44 @@ export default function BodyContent() {
             message.error('Gagal mengakses kamera CCTV')
         } finally {
             setLoadingCctv(false)
+        }
+    }
+
+    // =====================================================
+    // Jalankan deteksi plat nomor (ONNX)
+    // =====================================================
+    const handleRunOnnxDetection = async () => {
+        if (!cctvImage) {
+            message.warning('Ambil snapshot CCTV terlebih dahulu.')
+            return
+        }
+
+        try {
+            setLoadingOnnx(true)
+
+            console.log('📤 Mengirim gambar ke ONNX, panjang base64:', cctvImage?.length)
+            if (!cctvImage.startsWith('data:image')) {
+                message.error('Format gambar tidak valid (bukan base64).')
+                setLoadingOnnx(false)
+                return
+            }
+
+            const result = await window.electronAPI.runPlateDetection(cctvImage)
+            console.log('📥 Hasil deteksi:', result)
+
+            if (result.status === 'success') {
+                setOnnxResult(result)
+                message.success(`Plat terdeteksi (Confidence ${(result.confidence * 100).toFixed(1)}%)`)
+            } else if (result.status === 'no_plate') {
+                message.warning(result.message || 'Plat tidak terbaca oleh model.')
+            } else {
+                message.error(result.message || 'Gagal mendeteksi plat nomor')
+            }
+        } catch (err) {
+            console.error('❌ Error ONNX:', err)
+            message.error('Terjadi kesalahan saat deteksi plat.')
+        } finally {
+            setLoadingOnnx(false)
         }
     }
 
@@ -211,10 +253,8 @@ export default function BodyContent() {
                     </div>
                 )}
 
-                {/* Content TESTING Container 2*/}
-
                 {/* =====================================================
-                    CCTV SNAPSHOT SECTION (Tambahan Baru)
+                    CCTV SNAPSHOT SECTION
                 ===================================================== */}
                 <div className="bg-white rounded-lg shadow p-4 mt-2">
                     <h4 className="font-semibold text-gray-700 mb-3">
@@ -264,12 +304,38 @@ export default function BodyContent() {
                     </Form>
 
                     {cctvImage && (
-                        <div className="mt-4 flex justify-center">
+                        <div className="mt-4 flex flex-col items-center gap-3">
                             <img
                                 src={cctvImage}
                                 alt="CCTV Snapshot"
                                 className="rounded-lg shadow-md max-h-80 object-contain"
                             />
+                            <Button
+                                type="dashed"
+                                onClick={handleRunOnnxDetection}
+                                loading={loadingOnnx}
+                            >
+                                Jalankan Deteksi Plat Nomor (ONNX)
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* =====================================================
+                        HASIL CROP DARI ONNX (TAMBAHAN)
+                    ===================================================== */}
+                    {onnxResult?.croppedImage && (
+                        <div className="mt-6 flex flex-col items-center">
+                            <h5 className="font-semibold text-gray-700 mb-2">
+                                Hasil Crop Plat Nomor:
+                            </h5>
+                            <img
+                                src={onnxResult.croppedImage}
+                                alt="Hasil Crop Plat"
+                                className="rounded-lg shadow-md max-h-60 object-contain border border-gray-300"
+                            />
+                            <p className="text-sm text-gray-600 mt-1">
+                                Confidence: {(onnxResult.confidence * 100).toFixed(1)}%
+                            </p>
                         </div>
                     )}
                 </div>
