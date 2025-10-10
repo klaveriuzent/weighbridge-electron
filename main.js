@@ -232,16 +232,25 @@ ipcMain.handle("run-plate-detection", async (_event, imageInput) => {
             .raw()
             .toBuffer();
 
-        const floatCHW = new Float32Array(3 * inputSize * inputSize);
+        // ==================================================
+        // 🔁 Buat tensor NCHW (Channel, Height, Width)
+        // ==================================================
         const size = inputSize * inputSize;
+        const floatCHW = new Float32Array(3 * size);
+
+        // Gunakan BGR jika model dilatih dari OpenCV
         for (let i = 0; i < size; i++) {
-            floatCHW[i] = resized[i * 3] / 255;
-            floatCHW[size + i] = resized[i * 3 + 1] / 255;
-            floatCHW[2 * size + i] = resized[i * 3 + 2] / 255;
+            floatCHW[i] = resized[i * 3 + 2] / 255.0;       // B
+            floatCHW[size + i] = resized[i * 3 + 1] / 255.0; // G
+            floatCHW[2 * size + i] = resized[i * 3] / 255.0; // R
         }
 
+        console.log("🧠 [DEBUG] Tensor sample (first 12):", Array.from(floatCHW.slice(0, 12)));
+
+        // Tensor sesuai format model: NCHW
         const inputTensor = new ort.Tensor("float32", floatCHW, [1, 3, inputSize, inputSize]);
         const feeds = { [plateSession.inputNames[0]]: inputTensor };
+
         const results = await plateSession.run(feeds);
         const output = results[plateSession.outputNames[0]];
 
@@ -251,20 +260,19 @@ ipcMain.handle("run-plate-detection", async (_event, imageInput) => {
         const labels = ["plate"];
         const detections = decodeYoloCustom(output, anchors, labels, 0.01, 0.45);
 
-        if (!detections.length) {
+        console.log(`📊 [DEBUG] Total box sebelum filter: ${detections.length}`);
+        if (detections.length === 0) {
             console.warn("⚠️ [ONNX] Tidak ada objek terdeteksi");
             return { status: "no_plate", message: "Tidak ada plat terdeteksi" };
         }
 
-        const best = detections[0];
+        const best = detections.sort((a, b) => b.confidence - a.confidence)[0];
         console.log(`📊 [ONNX] Confidence tertinggi: ${(best.confidence * 100).toFixed(1)}%`);
 
-        // Scale back to original resolution
         const x1 = Math.max(0, Math.floor(best.x * origW));
         const y1 = Math.max(0, Math.floor(best.y * origH));
         const w = Math.max(10, Math.floor(best.w * origW));
         const h = Math.max(10, Math.floor(best.h * origH));
-
         const x2 = Math.min(origW - 1, x1 + w);
         const y2 = Math.min(origH - 1, y1 + h);
 
